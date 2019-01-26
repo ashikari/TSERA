@@ -33,10 +33,10 @@ w_min = 24.0 #mm
 w_max = 82.47 #mm
 
 
-def L_theta(theta,l_bent, l_total):
+def L_theta(theta, l_bent = l_bent, l_total = l_total):
     return l_total*np.sin(theta) + l_bent*np.cos(theta)
 
-def w_theta(theta, l_r, l_total):
+def w_theta(theta, l_r = l_r, l_total = l_total):
     return 2*l_r*np.cos(theta) - l_bent*np.sin(theta)
 
 def theta_min(l_r):
@@ -58,7 +58,6 @@ def T_motor(theta, F_applied, l_bent, l_r, l_total, z_s = zeta_s, z_p = zeta_p):
 
 
 L_max = L_theta(theta_max, l_bent, l_total)
-L_min = L_theta(theta_min(l_r), l_bent, l_total)
 
 #inertia
 I_com = 0.85 #kg/m^2
@@ -81,7 +80,7 @@ def w_l(L, l_bent, l_o, l_e):
     a3 = (L*l_bent)*(l_e - l_o)
     return a1*(a2-a3)
 
-def theta_w(w, lb, lo):
+def theta_w(w, lb = l_bent, lo = l_r):
     a = 2*(lb**2)*lo
     b = (lb**2)*(lb**2 + 4*lo**2 - w**2)
     c = lb**3 - lb*w**2
@@ -89,7 +88,7 @@ def theta_w(w, lb, lo):
 
 
 def dphi_dt(phi, wnl):
-    w = w_max - lead*1000*phi/np.pi
+    w = w_max - lead*1000*phi/(np.pi)
     T = T_motor(theta_w(w, l_bent, l_r), F_app, l_bent, l_r, l_total, zeta_s, zeta_p)
     return -wnl*(T/T_stall - 1)
 
@@ -98,14 +97,27 @@ def sim_phi(wnl, dt):
     phi_f = (w_max - w_min)*np.pi
     phi = 0
     count = 0
+    phi_list = [phi]
     
-    print ("phi_f: " + str(phi_f) )
     while phi<phi_f:
         phi = phi + dphi_dt(phi, wnl)*dt
-#         print(phi)
+        phi_list.append(phi)
         count+=1
-    return count*dt
-        
+    return count*dt, phi_list
+
+
+
+def w_phi(phi):
+    return w_max - lead*1000*phi/np.pi
+
+def L_phi(phi):
+    w = w_phi(phi)
+    L = L_theta( theta_w(w, l_bent, l_r), l_bent, l_total)
+    return L
+    
+
+L_min = L_phi(0)    
+
 def print_stats():
     print("F_nut: " + str( F_nut(theta_min(l_r), F_app, l_bent, l_r, l_total) ) )
     print("F_act: " + str(F_act) )
